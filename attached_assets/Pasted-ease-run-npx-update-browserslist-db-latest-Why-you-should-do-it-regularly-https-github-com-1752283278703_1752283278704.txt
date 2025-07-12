@@ -1,0 +1,49 @@
+ease run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1:20:52 AM [vite] Pre-transform error:   × the name `MenuItemCard` is defined multiple times
+    ╭─[/home/runner/workspace/Orda/src/pages/RestaurantDetailsPage.tsx:9:1]
+  6 │ import { Separator } from '@/components/ui/separator';
+  7 │ import { Clock, MapPin, Star, Truck } from 'lucide-react';
+  8 │ import { formatNaira } from '@/utils/currencyFormatter'; // Assuming this path
+  9 │ import { MenuItemCard } from '@/components/MenuItemCard'; // You'll need to create this component
+    ·          ──────┬─────
+    ·                ╰── previous definition of `MenuItemCard` here
+ 10 │ 
+ 11 │ // Define Restaurant and MenuItem interfaces (adjust to your schema)
+ 12 │ interface Restaurant {
+ 13 │     id: string;
+ 14 │     name: string;
+ 15 │     description: string;
+ 16 │     address: string;
+ 17 │     cuisine: string;
+ 18 │     image: string;
+ 19 │     coverImage?: string;
+ 20 │     rating: number;
+ 21 │     reviewCount: number;
+ 22 │     avgDeliveryTime: number; // in minutes
+ 23 │     deliveryFee: number;
+ 24 │     minOrderAmount: number;
+ 25 │     isOpen: boolean;
+ 26 │     phone: string;
+ 27 │ }
+ 28 │ 
+ 29 │ interface MenuItem {
+ 30 │     id: string;
+ 31 │     name: string;
+ 32 │     description: string;
+ 33 │     price: number;
+ 34 │     image?: string;
+ 35 │     category: string; // e.g., "Main Dishes", "Sides", "Drinks"
+ 36 │     // Potentially: add_ons, customization_options
+ 37 │ }
+ 38 │ 
+ 39 │ // Dummy MenuItemCard component for this example (you'll replace with your actual one)
+ 40 │ const MenuItemCard: React.FC<{ item: MenuItem; onAddToCart: (item: MenuItem, quantity: number) => void }> = ({ item, onAddToCart }) => (
+    ·       ──────┬─────
+    ·             ╰── `MenuItemCard` redefined here
+ 41 │     <Card data-lov-id="src/pages/RestaurantDetailsPage.tsx:41:4" data-lov-name="Card"  data-component-path="src/pages/RestaurantDetailsPage.tsx" data-component-line="41" data-component-file="RestaurantDetailsPage.tsx" data-component-name="Card" data-component-content="%7B%22className%22%3A%22flex%20items-center%20p-3%20border%20hover%3Ashadow-md%20transition-shadow%22%7D" className="flex items-center p-3 border hover:shadow-md transition-shadow">
+ 42 │         {item.image && <img data-lov-id="src/pages/RestaurantDetailsPage.tsx:42:23" data-lov-name="img"  data-component-path="src/pages/RestaurantDetailsPage.tsx" data-component-line="42" data-component-file="RestaurantDetailsPage.tsx" data-component-name="img" data-component-content="%7B%22className%22%3A%22w-20%20h-20%20object-cover%20rounded-md%20mr-4%22%7D" src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-md mr-4" />}
+ 43 │         <div data-lov-id="src/pages/RestaurantDetailsPage.tsx:43:8" data-lov-name="div"  data-component-path="src/pages/RestaurantDetailsPage.tsx" data-component-line="43" data-component-file="RestaurantDetailsPage.tsx" data-component-name="div" data-component-content="%7B%22className%22%3A%22flex-grow%22%7D" className="flex-grow">
+    ╰────
+
