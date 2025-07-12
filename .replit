@@ -20,6 +20,10 @@ task = "shell.exec"
 args = "cd Orda && npm run dev"
 
 [[ports]]
+localPort = 443
+externalPort = 3001
+
+[[ports]]
 localPort = 8080
 externalPort = 80
 
