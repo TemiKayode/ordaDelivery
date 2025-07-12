@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Changed from '@/contexts/AuthContext'
-import { supabase } from '../integrations/supabase/client'; // Changed from '@/integrations/supabase/client'
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,19 +102,76 @@ const RestaurantDashboard = ({ viewAsUserId }: RestaurantDashboardProps) => {
     const [dashboardLoading, setDashboardLoading] = useState(true);
     const [restaurantUsers, setRestaurantUsers] = useState<any[]>([]);
     const [selectedImage, setSelectedImage] = useState<File | null>(null); // State for image file selection
-    const [isUploadingImage, setIsUploadingImage] = useState(false); // State for tracking image upload status
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [realTimeMetrics, setRealTimeMetrics] = useState({
+        todayRevenue: 0,
+        todayOrders: 0,
+        avgPreparationTime: 0,
+        customerSatisfaction: 4.5,
+        pendingOrders: 0
+    });
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [orderSound] = useState(new Audio('/notification.mp3')); // Add notification sound
 
     // Determine which user ID to use for fetching data.
     // If `viewAsUserId` is provided (e.g., from AdminDashboard), use that.
     // Otherwise, use the ID of the currently logged-in user.
     const userIdToFetch = viewAsUserId || user?.id;
 
+    // Real-time order notifications
+    const playNotificationSound = useCallback(() => {
+        orderSound.play().catch(e => console.log('Could not play notification sound:', e));
+    }, [orderSound]);
+
+    // Real-time order updates subscription
+    useEffect(() => {
+        if (!restaurant?.id) return;
+
+        const subscription = supabase
+            .channel('restaurant_orders')
+            .on('postgres_changes', 
+                { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'orders',
+                    filter: `restaurant_id=eq.${restaurant.id}`
+                }, 
+                (payload) => {
+                    console.log('New order received:', payload);
+                    playNotificationSound();
+                    setNotifications(prev => [{
+                        id: Date.now(),
+                        type: 'new_order',
+                        message: `New order #${payload.new.order_number} received!`,
+                        timestamp: new Date().toISOString()
+                    }, ...prev.slice(0, 4)]);
+                    fetchRestaurantData(userIdToFetch);
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'orders',
+                    filter: `restaurant_id=eq.${restaurant.id}`
+                },
+                (payload) => {
+                    console.log('Order updated:', payload);
+                    fetchRestaurantData(userIdToFetch);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [restaurant?.id, userIdToFetch, playNotificationSound]);
+
     // Effect hook to fetch restaurant data when the `userIdToFetch` changes.
     useEffect(() => {
         if (userIdToFetch) {
             fetchRestaurantData(userIdToFetch);
         } else {
-            // If no user ID is available to fetch data for, set loading to false.
             setDashboardLoading(false);
         }
     }, [userIdToFetch]);

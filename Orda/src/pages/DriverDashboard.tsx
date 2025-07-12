@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Changed from '@/contexts/AuthContext'
-import { supabase } from '../integrations/supabase/client'; // Changed from '@/integrations/supabase/client'
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -93,21 +93,101 @@ const DriverDashboard = ({ viewAsUserId }: DriverDashboardProps) => {
     });
     const [dashboardLoading, setDashboardLoading] = useState(true);
     const [isOnline, setIsOnline] = useState(false); // Driver online status
+    const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [realTimeStats, setRealTimeStats] = useState({
+        todayEarnings: 0,
+        todayDeliveries: 0,
+        avgRating: 4.8,
+        completionRate: 98.5
+    });
 
     // Determine which user ID to use for fetching data.
     // If `viewAsUserId` is provided (e.g., from AdminDashboard), use that.
     // Otherwise, use the ID of the currently logged-in user.
     const userIdToFetch = viewAsUserId || user?.id;
 
+    // Real-time location tracking
+    const trackLocation = useCallback(() => {
+        if (navigator.geolocation && isOnline) {
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const newLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    setCurrentLocation(newLocation);
+                    // Update driver location in database
+                    if (userIdToFetch) {
+                        supabase
+                            .from('driver_locations')
+                            .upsert({
+                                driver_id: userIdToFetch,
+                                latitude: newLocation.lat,
+                                longitude: newLocation.lng,
+                                updated_at: new Date().toISOString()
+                            })
+                            .then(({ error }) => {
+                                if (error) console.error('Error updating location:', error);
+                            });
+                    }
+                },
+                (error) => console.error('Location error:', error),
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+            );
+        }
+    }, [isOnline, userIdToFetch]);
+
+    // Real-time order updates subscription
+    useEffect(() => {
+        if (!userIdToFetch) return;
+
+        const subscription = supabase
+            .channel('driver_orders')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'orders',
+                    filter: `driver_id=eq.${userIdToFetch}`
+                }, 
+                (payload) => {
+                    console.log('Order update received:', payload);
+                    fetchDriverData(userIdToFetch);
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'route_orders'
+                },
+                (payload) => {
+                    console.log('Route order update received:', payload);
+                    fetchDriverData(userIdToFetch);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [userIdToFetch]);
+
     // Effect hook to fetch driver data when the `userIdToFetch` changes.
     useEffect(() => {
         if (userIdToFetch) {
             fetchDriverData(userIdToFetch);
         } else {
-            // If no user ID is available to fetch data for, set loading to false.
             setDashboardLoading(false);
         }
     }, [userIdToFetch]);
+
+    // Start location tracking when driver goes online
+    useEffect(() => {
+        if (isOnline) {
+            trackLocation();
+        }
+    }, [isOnline, trackLocation]);
 
     // Function to fetch all relevant driver data from Supabase
     // It now accepts `targetUserId` to fetch data for a specific user.

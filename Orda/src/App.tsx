@@ -29,6 +29,9 @@ import DriverDashboard from './pages/DriverDashboard';
 import RestaurantDashboard from './pages/RestaurantDashboard';
 import RestaurantOnboarding from './pages/RestaurantOnboarding';
 
+//Import PrivateRoute Component
+import PrivateRoute from './components/PrivateRoute';
+
 
 // --- PrivateRoute Component for Authentication and Authorization ---
 // This component checks if a user is authenticated and has the required role
