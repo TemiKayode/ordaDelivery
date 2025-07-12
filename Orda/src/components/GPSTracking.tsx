@@ -1,277 +1,388 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, Clock, Truck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '../integrations/supabase/client';
+import {
+    MapPin,
+    Navigation,
+    Phone,
+    Clock,
+    Truck,
+    CheckCircle,
+    AlertCircle,
+    Copy
+} from 'lucide-react';
 
-interface GPSLocation {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  speed?: number;
-  bearing?: number;
-  timestamp: string;
+interface Location {
+    latitude: number;
+    longitude: number;
+    address?: string;
+}
+
+interface Driver {
+    id: string;
+    name: string;
+    phone: string;
+    currentLocation: Location;
+    estimatedArrival: string;
 }
 
 interface GPSTrackingProps {
-  orderId: string;
-  driverId?: string;
-  isDriver?: boolean;
+    orderId: string;
+    customerLocation: Location;
+    restaurantLocation: Location;
+    driver?: Driver;
+    orderStatus: string;
+    deliveryCode?: string;
+    isDriver?: boolean;
+    onStatusUpdate?: (orderId: string, status: string, deliveryCode?: string) => void;
 }
 
-const GPSTracking: React.FC<GPSTrackingProps> = ({ orderId, driverId, isDriver = false }) => {
-  const [currentLocation, setCurrentLocation] = useState<GPSLocation | null>(null);
-  const [isTracking, setIsTracking] = useState(false);
-  const [watchId, setWatchId] = useState<number | null>(null);
+const GPSTracking: React.FC<GPSTrackingProps> = ({
+    orderId,
+    customerLocation,
+    restaurantLocation,
+    driver,
+    orderStatus,
+    deliveryCode,
+    isDriver = false,
+    onStatusUpdate
+}) => {
+    const { toast } = useToast();
+    const mapRef = useRef<HTMLDivElement>(null);
+    const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+    const [enteredCode, setEnteredCode] = useState('');
+    const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
-  useEffect(() => {
-    if (driverId) {
-      fetchLastLocation();
-      setupRealtimeTracking();
-    }
-
-    return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-    };
-  }, [driverId]);
-
-  const fetchLastLocation = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('gps_tracking')
-        .select('*')
-        .eq('driver_id', driverId)
-        .eq('order_id', orderId)
-        .order('timestamp', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        setCurrentLocation({
-          latitude: parseFloat(data.latitude.toString()),
-          longitude: parseFloat(data.longitude.toString()),
-          accuracy: data.accuracy ? parseFloat(data.accuracy.toString()) : undefined,
-          speed: data.speed ? parseFloat(data.speed.toString()) : undefined,
-          bearing: data.bearing ? parseFloat(data.bearing.toString()) : undefined,
-          timestamp: data.timestamp
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching last location:', error);
-    }
-  };
-
-  const setupRealtimeTracking = () => {
-    const channel = supabase
-      .channel(`gps_tracking_${orderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'gps_tracking',
-          filter: `order_id=eq.${orderId}`
-        },
-        (payload) => {
-          const newLocation = payload.new;
-          setCurrentLocation({
-            latitude: parseFloat(newLocation.latitude.toString()),
-            longitude: parseFloat(newLocation.longitude.toString()),
-            accuracy: newLocation.accuracy ? parseFloat(newLocation.accuracy.toString()) : undefined,
-            speed: newLocation.speed ? parseFloat(newLocation.speed.toString()) : undefined,
-            bearing: newLocation.bearing ? parseFloat(newLocation.bearing.toString()) : undefined,
-            timestamp: newLocation.timestamp
-          });
+    // Mock map implementation - in production, use Leaflet.js or Google Maps
+    useEffect(() => {
+        if (mapRef.current) {
+            // Initialize map here
+            console.log('Map would be initialized here with locations:', {
+                customer: customerLocation,
+                restaurant: restaurantLocation,
+                driver: driver?.currentLocation
+            });
         }
-      )
-      .subscribe();
+    }, [customerLocation, restaurantLocation, driver]);
 
-    return () => {
-      supabase.removeChannel(channel);
+    // Real-time location tracking for drivers
+    useEffect(() => {
+        if (isDriver && navigator.geolocation) {
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const newLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    setCurrentLocation(newLocation);
+                    updateDriverLocation(newLocation);
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    toast({
+                        title: "Location Error",
+                        description: "Unable to track your location. Please enable location services.",
+                        variant: "destructive",
+                    });
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+
+            return () => navigator.geolocation.clearWatch(watchId);
+        }
+    }, [isDriver]);
+
+    // Subscribe to real-time GPS updates
+    useEffect(() => {
+        if (!isDriver && driver) {
+            const subscription = supabase
+                .channel(`gps_tracking_${orderId}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'gps_tracking',
+                    filter: `order_id=eq.${orderId}`
+                }, (payload) => {
+                    if (payload.new) {
+                        const { latitude, longitude } = payload.new;
+                        setCurrentLocation({ latitude, longitude });
+                    }
+                })
+                .subscribe();
+
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
+    }, [orderId, isDriver, driver]);
+
+    const updateDriverLocation = async (location: Location) => {
+        try {
+            const { error } = await supabase
+                .from('gps_tracking')
+                .upsert({
+                    order_id: orderId,
+                    driver_id: driver?.id,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    timestamp: new Date().toISOString()
+                });
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error updating driver location:', error);
+        }
     };
-  };
 
-  const startTracking = () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
-      return;
-    }
+    const verifyDeliveryCode = async () => {
+        if (!enteredCode.trim()) {
+            toast({
+                title: "Invalid Code",
+                description: "Please enter the delivery code",
+                variant: "destructive",
+            });
+            return;
+        }
 
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0
+        setIsVerifyingCode(true);
+        try {
+            // Verify the delivery code
+            const { data, error } = await supabase
+                .from('orders')
+                .select('delivery_code')
+                .eq('id', orderId)
+                .single();
+
+            if (error) throw error;
+
+            if (data.delivery_code === enteredCode.trim()) {
+                // Code is correct, update order status to delivered
+                await supabase
+                    .from('orders')
+                    .update({
+                        status: 'delivered',
+                        actual_delivery_time: new Date().toISOString()
+                    })
+                    .eq('id', orderId);
+
+                toast({
+                    title: "Delivery Confirmed!",
+                    description: "Order has been successfully delivered",
+                });
+
+                onStatusUpdate?.(orderId, 'delivered', enteredCode);
+            } else {
+                toast({
+                    title: "Invalid Code",
+                    description: "The delivery code you entered is incorrect",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            console.error('Error verifying delivery code:', error);
+            toast({
+                title: "Error",
+                description: "Failed to verify delivery code",
+                variant: "destructive",
+            });
+        } finally {
+            setIsVerifyingCode(false);
+        }
     };
 
-    const id = navigator.geolocation.watchPosition(
-      (position) => {
-        const location: GPSLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          speed: position.coords.speed || undefined,
-          bearing: position.coords.heading || undefined,
-          timestamp: new Date().toISOString()
-        };
+    const copyDeliveryCode = () => {
+        if (deliveryCode) {
+            navigator.clipboard.writeText(deliveryCode);
+            toast({
+                title: "Copied!",
+                description: "Delivery code copied to clipboard",
+            });
+        }
+    };
 
-        updateLocationInDatabase(location);
-        setCurrentLocation(location);
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-        setIsTracking(false);
-      },
-      options
-    );
+    const calculateDistance = (loc1: Location, loc2: Location) => {
+        const R = 6371; // Earth's radius in km
+        const dLat = (loc2.latitude - loc1.latitude) * Math.PI / 180;
+        const dLon = (loc2.longitude - loc1.longitude) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(loc1.latitude * Math.PI / 180) * Math.cos(loc2.latitude * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    };
 
-    setWatchId(id);
-    setIsTracking(true);
-  };
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'pending': return <Clock className="h-5 w-5 text-yellow-500" />;
+            case 'confirmed': return <CheckCircle className="h-5 w-5 text-blue-500" />;
+            case 'preparing': return <Clock className="h-5 w-5 text-orange-500" />;
+            case 'ready': return <CheckCircle className="h-5 w-5 text-purple-500" />;
+            case 'picked_up': return <Truck className="h-5 w-5 text-indigo-500" />;
+            case 'delivering': return <Navigation className="h-5 w-5 text-cyan-500" />;
+            case 'delivered': return <CheckCircle className="h-5 w-5 text-green-500" />;
+            case 'cancelled': return <AlertCircle className="h-5 w-5 text-red-500" />;
+            default: return <Clock className="h-5 w-5 text-gray-500" />;
+        }
+    };
 
-  const stopTracking = () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-    }
-    setIsTracking(false);
-  };
+    return (
+        <div className="space-y-6">
+            {/* Order Status */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                        {getStatusIcon(orderStatus)}
+                        <span>Order Status: {orderStatus.charAt(0).toUpperCase() + orderStatus.slice(1)}</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {!isDriver && deliveryCode && (orderStatus === 'delivering' || orderStatus === 'picked_up') && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-semibold text-blue-900">Your Delivery Code</h4>
+                                    <p className="text-sm text-blue-700">Show this code to the driver upon delivery</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Badge variant="outline" className="text-lg font-mono bg-white">
+                                        {deliveryCode}
+                                    </Badge>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={copyDeliveryCode}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-  const updateLocationInDatabase = async (location: GPSLocation) => {
-    try {
-      const { error } = await supabase
-        .from('gps_tracking')
-        .insert({
-          driver_id: driverId,
-          order_id: orderId,
-          latitude: parseFloat(location.latitude.toString()),
-          longitude: parseFloat(location.longitude.toString()),
-          accuracy: location.accuracy ? parseFloat(location.accuracy.toString()) : undefined,
-          speed: location.speed ? parseFloat(location.speed.toString()) : undefined,
-          bearing: location.bearing ? parseFloat(location.bearing.toString()) : undefined,
-          timestamp: location.timestamp
-        });
+                    {isDriver && orderStatus === 'delivering' && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <h4 className="font-semibold text-green-900 mb-2">Verify Delivery</h4>
+                            <p className="text-sm text-green-700 mb-3">
+                                Ask the customer for their delivery code and enter it below to confirm delivery
+                            </p>
+                            <div className="flex items-center space-x-2">
+                                <Input
+                                    placeholder="Enter delivery code"
+                                    value={enteredCode}
+                                    onChange={(e) => setEnteredCode(e.target.value)}
+                                    className="font-mono"
+                                />
+                                <Button 
+                                    onClick={verifyDeliveryCode}
+                                    disabled={isVerifyingCode}
+                                >
+                                    {isVerifyingCode ? 'Verifying...' : 'Verify'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating location:', error);
-    }
-  };
+            {/* Map */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Live Tracking</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div 
+                        ref={mapRef} 
+                        className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center"
+                    >
+                        <div className="text-center text-gray-500">
+                            <MapPin className="h-12 w-12 mx-auto mb-2" />
+                            <p>Map will be rendered here</p>
+                            <p className="text-xs">Integration with Leaflet.js or Google Maps</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
-  const openInGoogleMaps = () => {
-    if (currentLocation) {
-      const url = `https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`;
-      window.open(url, '_blank');
-    }
-  };
+            {/* Driver Information */}
+            {driver && !isDriver && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Your Driver</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="font-semibold">{driver.name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    ETA: {driver.estimatedArrival}
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                                <Phone className="h-4 w-4 mr-2" />
+                                Call Driver
+                            </Button>
+                        </div>
 
-  const getLocationAccuracy = () => {
-    if (!currentLocation?.accuracy) return 'Unknown';
-    if (currentLocation.accuracy < 10) return 'High';
-    if (currentLocation.accuracy < 50) return 'Medium';
-    return 'Low';
-  };
-
-  const formatSpeed = (speed?: number) => {
-    if (!speed) return 'Unknown';
-    return `${(speed * 3.6).toFixed(1)} km/h`; // Convert m/s to km/h
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <MapPin className="h-5 w-5" />
-          <span>GPS Tracking</span>
-          {isTracking && (
-            <div className="flex items-center space-x-1 text-green-600">
-              <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
-              <span className="text-sm">Live</span>
-            </div>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isDriver && (
-          <div className="flex space-x-2">
-            <Button
-              onClick={startTracking}
-              disabled={isTracking}
-              className="flex items-center space-x-2"
-            >
-              <Truck className="h-4 w-4" />
-              <span>{isTracking ? 'Tracking Active' : 'Start Tracking'}</span>
-            </Button>
-            {isTracking && (
-              <Button
-                variant="outline"
-                onClick={stopTracking}
-                className="flex items-center space-x-2"
-              >
-                <span>Stop Tracking</span>
-              </Button>
+                        {currentLocation && (
+                            <div className="text-sm text-muted-foreground">
+                                Distance: {calculateDistance(currentLocation, customerLocation).toFixed(1)} km away
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             )}
-          </div>
-        )}
 
-        {currentLocation && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Latitude:</span>
-                <p className="font-mono">{currentLocation.latitude.toFixed(6)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Longitude:</span>
-                <p className="font-mono">{currentLocation.longitude.toFixed(6)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Accuracy:</span>
-                <p>{getLocationAccuracy()}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Speed:</span>
-                <p>{formatSpeed(currentLocation.speed)}</p>
-              </div>
-            </div>
+            {/* Location Information */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Locations</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full mt-2"></div>
+                        <div>
+                            <h4 className="font-semibold">Restaurant</h4>
+                            <p className="text-sm text-muted-foreground">
+                                {restaurantLocation.address || `${restaurantLocation.latitude}, ${restaurantLocation.longitude}`}
+                            </p>
+                        </div>
+                    </div>
 
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Last updated: {new Date(currentLocation.timestamp).toLocaleTimeString()}</span>
-            </div>
+                    <div className="flex items-start space-x-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
+                        <div>
+                            <h4 className="font-semibold">Delivery Address</h4>
+                            <p className="text-sm text-muted-foreground">
+                                {customerLocation.address || `${customerLocation.latitude}, ${customerLocation.longitude}`}
+                            </p>
+                        </div>
+                    </div>
 
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={openInGoogleMaps}
-                className="flex items-center space-x-2"
-              >
-                <Navigation className="h-4 w-4" />
-                <span>Open in Maps</span>
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {!currentLocation && !isDriver && (
-          <div className="text-center py-4 text-muted-foreground">
-            <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No tracking data available</p>
-          </div>
-        )}
-
-        {!currentLocation && isDriver && !isTracking && (
-          <div className="text-center py-4 text-muted-foreground">
-            <Truck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Start tracking to share your location</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+                    {driver && currentLocation && (
+                        <div className="flex items-start space-x-3">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full mt-2"></div>
+                            <div>
+                                <h4 className="font-semibold">Driver Location</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
 };
 
 export default GPSTracking;
