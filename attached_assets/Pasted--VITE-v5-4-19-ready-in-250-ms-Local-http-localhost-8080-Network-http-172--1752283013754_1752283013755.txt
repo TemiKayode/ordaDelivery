@@ -1,0 +1,76 @@
+
+  VITE v5.4.19  ready in 250 ms
+
+  ➜  Local:   http://localhost:8080/
+  ➜  Network: http://172.31.128.43:8080/
+  ➜  press h + enter to show help
+Error:   Failed to scan for dependencies from entries:
+  /home/runner/workspace/Orda/index.html
+
+  ✘ [ERROR] No matching export in "src/pages/DriverDashboard.tsx" for import "DriverDashboard"
+
+    src/pages/AdminDashboard.tsx:13:9:
+      13 │ import { DriverDashboard } from './DriverDashboard';
+         ╵          ~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] No matching export in "src/pages/CustomerDashboard.tsx" for import "CustomerDashboard"
+
+    src/pages/AdminDashboard.tsx:14:9:
+      14 │ import { CustomerDashboard } from './CustomerDashboard';
+         ╵          ~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] No matching export in "src/pages/RestaurantDashboard.tsx" for import "RestaurantDashboard"
+
+    src/pages/AdminDashboard.tsx:15:9:
+      15 │ import { RestaurantDashboard } from './RestaurantDashboard';
+         ╵          ~~~~~~~~~~~~~~~~~~~
+
+
+    at failureErrorWithLog (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:945:25
+    at runOnEndCallbacks (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:1315:45)
+    at buildResponseToResult (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:943:7)
+    at /home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:954:54)
+    at handleRequest (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:647:17)
+    at handleIncomingPacket (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:672:7)
+    at Socket.readFromStdout (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:600:7)
+1:15:07 AM [vite] vite.config.ts changed, restarting server...
+1:15:07 AM [vite] server restarted.
+Error:   Failed to scan for dependencies from entries:
+  /home/runner/workspace/Orda/index.html
+
+  ✘ [ERROR] No matching export in "src/pages/DriverDashboard.tsx" for import "DriverDashboard"
+
+    src/pages/AdminDashboard.tsx:13:9:
+      13 │ import { DriverDashboard } from './DriverDashboard';
+         ╵          ~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] No matching export in "src/pages/CustomerDashboard.tsx" for import "CustomerDashboard"
+
+    src/pages/AdminDashboard.tsx:14:9:
+      14 │ import { CustomerDashboard } from './CustomerDashboard';
+         ╵          ~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] No matching export in "src/pages/RestaurantDashboard.tsx" for import "RestaurantDashboard"
+
+    src/pages/AdminDashboard.tsx:15:9:
+      15 │ import { RestaurantDashboard } from './RestaurantDashboard';
+         ╵          ~~~~~~~~~~~~~~~~~~~
+
+
+    at failureErrorWithLog (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:945:25
+    at runOnEndCallbacks (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:1315:45)
+    at buildResponseToResult (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:943:7)
+    at /home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:954:54)
+    at handleRequest (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:647:17)
+    at handleIncomingPacket (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:672:7)
+    at Socket.readFromStdout (/home/runner/workspace/Orda/node_modules/esbuild/lib/main.js:600:7)
