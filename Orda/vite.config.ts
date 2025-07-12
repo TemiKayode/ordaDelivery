@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 8080,
     allowedHosts: "all",
+    strictPort: false,
+    hmr: {
+      port: 443,
+      clientPort: 443
+    }
   },
   plugins: [
     react(),
