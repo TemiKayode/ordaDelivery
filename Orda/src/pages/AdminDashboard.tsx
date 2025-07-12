@@ -10,9 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { DriverDashboard } from './DriverDashboard';
-import { CustomerDashboard } from './CustomerDashboard';
-import { RestaurantDashboard } from './RestaurantDashboard';
+import DriverDashboard from './DriverDashboard';
+import CustomerDashboard from './CustomerDashboard';
+import RestaurantDashboard from './RestaurantDashboard';
 import {
     Users,
     Store,
