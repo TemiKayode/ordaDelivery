@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+    :root {
+        /* Orda Brand Colors */
+        --brand-dark-green: 18 60% 14%; /* #412322 converted to HSL (unchanged) */
+        --brand-green: 302 60% 33%; /* #8A2387 converted to HSL */
+        --brand-light-green: 352 80% 60%; /* #E94057 converted to HSL */
+        --brand-cream: 69 41% 93%; /* #F0F1E7 converted to HSL (unchanged) */
+        --brand-pink: 24 88% 54%; /* #F27121 converted to HSL */
+
+        --background: var(--brand-cream);
+        --foreground: var(--brand-dark-green);
+        --card: 0 0% 100%;
+        --card-foreground: var(--brand-dark-green);
+        --popover: 0 0% 100%;
+        --popover-foreground: var(--brand-dark-green);
+        --primary: var(--brand-green); /* Updated */
+        --primary-foreground: var(--brand-cream);
+        --secondary: var(--brand-light-green); /* Updated */
+        --secondary-foreground: var(--brand-dark-green);
+        --muted: var(--brand-cream);
+        --muted-foreground: var(--brand-dark-green);
+        --accent: var(--brand-pink); /* Updated */
+        --accent-foreground: var(--brand-dark-green);
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: var(--brand-light-green); /* Updated, assuming you want this to match the new secondary */
+        --input: var(--brand-cream);
+        --ring: var(--brand-green); /* Updated */
+
+        --radius: 0.5rem;
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+
+    .dark {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 210 40% 98%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 212.7 26.8% 83.9%;
+        --sidebar-background: 240 5.9% 10%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 224.3 76.3% 48%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
