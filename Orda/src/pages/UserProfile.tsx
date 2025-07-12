@@ -1,164 +1,221 @@
-// src/pages/UserProfile.tsx
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Key, MapPin, User, Wallet } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext'; // Assuming you have an AuthContext
+import { User, MapPin, Phone, Mail, Camera, Star } from 'lucide-react';
 
-// Define Address and PaymentMethod interfaces (match your Supabase schema)
-interface Address {
-    id: string;
-    label: string;
-    address_line1: string;
-    city: string;
-    state: string;
-    zip_code?: string;
-    // Add other address fields
-}
-
-interface PaymentMethod {
-    id: string;
-    type: 'card' | 'bank_transfer' | 'ussd'; // etc.
-    last4?: string; // Last 4 digits of card
-    bank_name?: string;
-    // Add other relevant payment details
-}
-
-// Change `export const UserProfile` to `const UserProfile`
 const UserProfile: React.FC = () => {
-    const { user, signOut } = useAuth(); // Get user info from auth context
+    const { user, profile } = useAuth();
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        full_name: profile?.full_name || '',
+        phone: profile?.phone || '',
+        address: profile?.address || ''
+    });
 
-    // Placeholder user data and state for forms
-    const [userName, setUserName] = useState(user?.user_metadata?.full_name || 'John Doe');
-    const [userEmail, setUserEmail] = useState(user?.email || 'user@example.com');
-    const [userPhone, setUserPhone] = useState(user?.phone || 'N/A');
+    const orderHistory = [
+        {
+            id: '1',
+            restaurant: 'Lagos Kitchen',
+            items: ['Jollof Rice', 'Grilled Chicken'],
+            total: 3500,
+            date: '2024-01-15',
+            status: 'delivered'
+        },
+        {
+            id: '2',
+            restaurant: 'Amala Spot',
+            items: ['Amala & Ewedu', 'Assorted Meat'],
+            total: 2800,
+            date: '2024-01-10',
+            status: 'delivered'
+        }
+    ];
 
-    const [addresses, setAddresses] = useState<Address[]>([
-        { id: 'a1', label: 'Home', address_line1: '123 Main St', city: 'Lagos', state: 'Lagos', zip_code: '100001' },
-        { id: 'a2', label: 'Office', address_line1: '456 Business Ave', city: 'Lagos', state: 'Lagos', zip_code: '100001' },
-    ]);
-
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-        { id: 'pm1', type: 'card', last4: '4242' },
-        { id: 'pm2', type: 'bank_transfer', bank_name: 'GTBank' },
-    ]);
-
-    // Handle form submissions
-    const handleUpdateProfile = () => {
-        console.log('Update profile:', { userName, userEmail, userPhone });
-        // Call API to update user profile
+    const handleSave = async () => {
+        try {
+            // Here you would update the profile in your database
+            console.log('Updating profile:', formData);
+            setIsEditing(false);
+        } catch (error) {
+            console.error('Error updating profile:', error);
+        }
     };
 
-    const handleAddAddress = () => {
-        console.log('Add new address');
-        // Implement modal/form to add new address
-    };
-
-    const handleDeleteAddress = (id: string) => {
-        console.log('Delete address:', id);
-        setAddresses(addresses.filter(addr => addr.id !== id));
-        // Call API to delete address
-    };
-
-    const handleAddPaymentMethod = () => {
-        console.log('Add new payment method');
-        // Implement modal/form to add new payment method
-    };
-
-    const handleDeletePaymentMethod = (id: string) => {
-        console.log('Delete payment method:', id);
-        setPaymentMethods(paymentMethods.filter(pm => pm.id !== id));
-        // Call API to delete payment method
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
     };
 
     return (
-        <div className="container mx-auto p-4 md:p-6 lg:p-8">
-            <h1 className="text-3xl font-bold mb-6 text-foreground">User Profile</h1>
+        <div className="container mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold mb-2">My Profile</h1>
+                    <p className="text-muted-foreground">Manage your account settings and preferences</p>
+                </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <Card className="border shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <User className="h-5 w-5 text-primary" /> Personal Information
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label htmlFor="full-name">Full Name</Label>
-                            <Input id="full-name" value={userName} onChange={(e) => setUserName(e.target.value)} className="mt-1" />
-                        </div>
-                        <div>
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input id="email" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="mt-1" disabled /> {/* Email often not editable directly */}
-                        </div>
-                        <div>
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" type="tel" value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1" />
-                        </div>
-                        <Button onClick={handleUpdateProfile} className="w-full">Save Changes</Button>
-                        <Button variant="outline" className="w-full">
-                            <Key className="h-4 w-4 mr-2" /> Change Password
-                        </Button>
-                    </CardContent>
-                </Card>
+                <Tabs defaultValue="profile" className="space-y-6">
+                    <TabsList>
+                        <TabsTrigger value="profile">Profile</TabsTrigger>
+                        <TabsTrigger value="orders">Order History</TabsTrigger>
+                        <TabsTrigger value="addresses">Addresses</TabsTrigger>
+                        <TabsTrigger value="preferences">Preferences</TabsTrigger>
+                    </TabsList>
 
-                {/* Delivery Addresses */}
-                <Card className="border shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <MapPin className="h-5 w-5 text-primary" /> Delivery Addresses
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {addresses.map((addr) => (
-                            <div key={addr.id} className="border p-3 rounded-md flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{addr.label}</p>
-                                    <p className="text-sm text-muted-foreground">{addr.address_line1}, {addr.city}</p>
+                    <TabsContent value="profile">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Personal Information</CardTitle>
+                                    <Button 
+                                        variant={isEditing ? "outline" : "default"}
+                                        onClick={() => isEditing ? setIsEditing(false) : setIsEditing(true)}
+                                    >
+                                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                                    </Button>
                                 </div>
-                                <Button variant="destructive" size="sm" onClick={() => handleDeleteAddress(addr.id)}>Remove</Button>
-                            </div>
-                        ))}
-                        <Button onClick={handleAddAddress} className="w-full">Add New Address</Button>
-                    </CardContent>
-                </Card>
-
-                {/* Payment Methods */}
-                <Card className="border shadow-sm lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <Wallet className="h-5 w-5 text-primary" /> Payment Methods
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {paymentMethods.map((pm) => (
-                            <div key={pm.id} className="border p-3 rounded-md flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold capitalize">
-                                        {pm.type} {pm.last4 ? `(**** ${pm.last4})` : ''} {pm.bank_name ? `(${pm.bank_name})` : ''}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">Securely saved</p>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Avatar Section */}
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-20 w-20">
+                                        <AvatarImage src={profile?.avatar_url} />
+                                        <AvatarFallback>
+                                            {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{profile?.full_name || 'User'}</h3>
+                                        <p className="text-muted-foreground">{user?.email}</p>
+                                        <Badge variant="secondary" className="mt-1">
+                                            {profile?.user_type || 'Customer'}
+                                        </Badge>
+                                    </div>
+                                    {isEditing && (
+                                        <Button variant="outline" size="sm">
+                                            <Camera className="h-4 w-4 mr-2" />
+                                            Change Photo
+                                        </Button>
+                                    )}
                                 </div>
-                                <Button variant="destructive" size="sm" onClick={() => handleDeletePaymentMethod(pm.id)}>Remove</Button>
-                            </div>
-                        ))}
-                        <Button onClick={handleAddPaymentMethod} className="w-full">Add New Payment Method</Button>
-                    </CardContent>
-                </Card>
 
-                {/* Logout Section */}
-                <Card className="border shadow-sm lg:col-span-2">
-                    <CardContent className="p-4 flex justify-center">
-                        <Button variant="outline" className="w-full max-w-sm" onClick={signOut}>Log Out</Button>
-                    </CardContent>
-                </Card>
+                                <Separator />
+
+                                {/* Form Fields */}
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <Label htmlFor="full_name">Full Name</Label>
+                                        <Input
+                                            id="full_name"
+                                            value={formData.full_name}
+                                            onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                            disabled={!isEditing}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            value={user?.email || ''}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <Input
+                                            id="phone"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            disabled={!isEditing}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="address">Address</Label>
+                                        <Input
+                                            id="address"
+                                            value={formData.address}
+                                            onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                            disabled={!isEditing}
+                                        />
+                                    </div>
+                                </div>
+
+                                {isEditing && (
+                                    <div className="flex gap-2">
+                                        <Button onClick={handleSave}>Save Changes</Button>
+                                        <Button variant="outline" onClick={() => setIsEditing(false)}>
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="orders">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Order History</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {orderHistory.map((order) => (
+                                        <div key={order.id} className="border rounded-lg p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h4 className="font-semibold">{order.restaurant}</h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {order.items.join(', ')}
+                                                    </p>
+                                                </div>
+                                                <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>
+                                                    {order.status}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span>{order.date}</span>
+                                                <span className="font-medium">₦{order.total.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="addresses">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Saved Addresses</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Manage your delivery addresses</p>
+                                {/* Address management UI would go here */}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="preferences">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Preferences</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Manage your app preferences and notifications</p>
+                                {/* Preferences UI would go here */}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     );
 };
 
-export default UserProfile; // <<< Add this line at the very end of the file
+export default UserProfile;
