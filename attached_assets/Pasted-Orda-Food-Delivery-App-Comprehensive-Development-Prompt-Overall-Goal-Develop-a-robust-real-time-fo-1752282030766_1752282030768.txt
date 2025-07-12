@@ -1,0 +1,359 @@
+Orda Food Delivery App: Comprehensive Development Prompt
+Overall Goal
+Develop a robust, real-time food delivery application named "Orda" that provides seamless experiences for Customers, Restaurants (Sellers), and Drivers, covering the entire order lifecycle from browsing to delivery. The application should be built using React (with Tailwind CSS for styling) and Supabase for backend services (Auth, Database, Storage).
+
+Core Principles
+Real-time Updates: Critical for order tracking, driver location, and status changes.
+
+Intuitive UI/UX: Easy navigation and clear information for all user types.
+
+Robust Authentication & Authorization: Secure, role-based access control.
+
+Performance: Fast loading times and smooth interactions.
+
+Scalability: Designed with future growth in mind.
+
+User Roles & Journeys (Detailed)
+1. Customer Journey
+Goal: Browse restaurants, place an order, track it in real-time, and confirm delivery.
+
+Login/Registration:
+
+User signs up/logs in via email/password.
+
+Upon successful login, user is redirected to the Customer Dashboard.
+
+Customer Dashboard (/customer/dashboard):
+
+Displays a personalized feed of nearby restaurants (potentially based on user's default address or current location).
+
+Features: Search bar, filter options (cuisine type, rating, delivery time, price range), featured restaurants, popular dishes.
+
+Each restaurant should have a RestaurantCard (already in place) showing key info (name, rating, delivery time, fee).
+
+Restaurant Details Page (/customer/restaurant/:restaurantId):
+
+Displays detailed restaurant information (description, address, ratings, reviews, opening hours).
+
+Shows the full menu, categorized (e.g., "Main Dishes," "Sides," "Drinks").
+
+Each menu item should have an "Add to Cart" button.
+
+Cart Management (/customer/cart):
+
+Users can add/remove items, update quantities, and add special instructions per item.
+
+Displays subtotal, delivery fee, service fee, and total.
+
+"Proceed to Checkout" button.
+
+Checkout Page (/customer/checkout):
+
+Delivery Address Selection: User can select from saved addresses or add a new one (including map integration for pinpointing location).
+
+Payment Method Selection: Options for card payment (placeholder for integration), cash on delivery.
+
+Order Summary: Final breakdown of costs.
+
+"Place Order" button.
+
+Order Confirmation Page (/customer/order-confirmation/:orderId):
+
+Confirms order placement with order ID, estimated delivery time, and restaurant name.
+
+Provides options to "Track My Order" or "Continue Shopping."
+
+Order Tracking Page (/customer/track-order/:orderId):
+
+Real-time Status Updates: Visually represents order progress (e.g., "Order Placed," "Preparing," "On The Way," "Delivered").
+
+Live Map Tracking: Displays the driver's real-time location on a map relative to the restaurant and customer's delivery address (using GPSTracking component).
+
+Driver contact information (name, phone number) if assigned.
+
+Option to cancel order (if allowed by status) or report an issue.
+
+Order Delivery & Code Presentation:
+
+Upon driver arrival, the customer receives a notification.
+
+The customer presents a unique, one-time delivery code (generated at order confirmation, displayed on tracking page) to the driver for verification.
+
+User Profile Page (/customer/profile):
+
+Edit personal information (name, phone).
+
+Manage saved delivery addresses.
+
+Manage payment methods (placeholder for secure storage).
+
+View order history.
+
+2. Restaurant (Seller) Journey
+Goal: Manage menu, process incoming orders, and track deliveries.
+
+Login/Registration:
+
+Restaurant owner signs up/logs in.
+
+Onboarding process for new restaurants (/restaurant-owner/onboarding).
+
+Restaurant Dashboard (/restaurant-owner/dashboard):
+
+Order Management:
+
+Real-time display of new incoming orders (with sound/visual alerts).
+
+Ability to accept/reject orders.
+
+Update order status (e.g., "Preparing," "Ready for Pickup").
+
+View order details (items, customer notes, delivery address).
+
+Menu Management:
+
+Add, edit, delete menu items (name, description, price, image, category, availability).
+
+Manage categories.
+
+Restaurant Profile Management:
+
+Update restaurant details (address, opening hours, contact info, images).
+
+Toggle restaurant isOpen status.
+
+Analytics/Reports: (Basic placeholder) View sales, popular items, delivery performance.
+
+Order Fulfillment Process:
+
+Restaurant accepts order.
+
+Kitchen prepares food (status: "Preparing").
+
+Restaurant marks order as "Ready for Pickup."
+
+System notifies available drivers.
+
+3. Driver Journey
+Goal: Accept deliveries, navigate to pickup/delivery locations, and update order status in real-time.
+
+Registration/Onboarding:
+
+Driver signs up, provides necessary details (vehicle, license, etc.).
+
+Admin approves driver.
+
+Login:
+
+Driver logs in.
+
+Driver Dashboard (/driver/dashboard):
+
+Availability Toggle: "Go Online" / "Go Offline" status.
+
+New Order Requests: Real-time display of available delivery requests (restaurant pickup location, customer delivery location, estimated earnings, distance).
+
+Ability to accept/reject a delivery request.
+
+Active Deliveries: List of currently assigned orders.
+
+Live Delivery Tracking:
+
+Navigation: Integrated map for turn-by-turn directions from current location to restaurant, then to customer.
+
+Status Updates:
+
+"Picked Up" button (updates order status for all parties).
+
+"Delivered" button.
+
+Real-time GPS Reporting: Driver's location is continuously updated to the system for customer tracking.
+
+Customer contact information (phone number).
+
+Delivery Code Verification: Input field for the customer's delivery code upon arrival to confirm delivery.
+
+Key Features & Components (Refined)
+Authentication:
+
+Email/Password login and registration.
+
+Password reset.
+
+Session management (Supabase Auth).
+
+Role-based access control (user_type in profiles table, user_roles table).
+
+Navigation:
+
+Responsive navigation bar (for customer, restaurant, driver dashboards).
+
+Conditional rendering of navigation items based on user role.
+
+Restaurant Listing:
+
+RestaurantCard component (already exists).
+
+Filtering and sorting options.
+
+Menu Display:
+
+Categorized menu sections.
+
+MenuItemCard component.
+
+Cart & Checkout:
+
+Add to cart, update quantity, remove from cart.
+
+Order summary calculation (subtotal, delivery fee, service fee, total).
+
+Address selection/management.
+
+Payment method selection (placeholder for integration).
+
+Order Tracking:
+
+Status timeline/steps component (e.g., Steps component).
+
+Map Integration (GPSTracking component):
+
+Display restaurant, driver, and customer locations.
+
+Real-time driver movement (mocked initially, but designed for live data).
+
+Driver contact button.
+
+Delivery code input for verification.
+
+Admin Dashboard:
+
+User management (view, edit roles, approve drivers/restaurants).
+
+Restaurant management (approve, suspend, view details).
+
+Order oversight (view all orders, filter by status).
+
+Basic analytics.
+
+Notifications:
+
+In-app notifications for order status changes, new requests, etc. (using notifications table).
+
+UI Components: Leverage shadcn/ui for consistent and accessible UI elements (Button, Card, Input, Label, RadioGroup, Textarea, Select, Switch, DropdownMenu, etc.).
+
+Data Model (Supabase Integration)
+Leverage your existing Supabase schema as provided in client.ts. Ensure all data interactions (fetching, inserting, updating) align with the defined tables and relationships:
+
+profiles: Stores user details (user_id, display_name, user_type, phone, address, avatar_url).
+
+user_roles: Maps user_id to role (e.g., 'customer', 'admin', 'restaurant', 'driver').
+
+restaurants: Restaurant details (name, address, cuisine_type, image_url, cover_image_url, rating, avg_delivery_time, delivery_fee, min_order_amount, is_active, owner_id).
+
+categories: Menu categories for restaurants (name, description, restaurant_id).
+
+menu_items: Individual menu items (name, description, price, image_url, category_id, restaurant_id, is_available).
+
+orders: Main order details (customer_id, restaurant_id, driver_id, status, total_amount, delivery_address (JSON), payment_status, estimated_delivery_time).
+
+order_items: Details of items within an order (order_id, menu_item_id, quantity, unit_price, total_price, special_instructions).
+
+driver_routes: Driver's current route/assignment details (driver_id, current_location, status, current_order_count).
+
+gps_tracking: Real-time driver location updates (driver_id, order_id, latitude, longitude, timestamp).
+
+reviews: Customer reviews for restaurants and drivers.
+
+notifications: In-app notification system (user_id, title, message, type, is_read).
+
+restaurant_users: For managing restaurant staff access and permissions.
+
+Crucial Supabase Considerations:
+
+Row Level Security (RLS): Implement robust RLS policies on all tables to ensure users can only access data they are authorized to see (e.g., customers can only see their own orders, restaurants only their own menu/orders, drivers only their assigned deliveries). This is a common source of 401/403 errors if not configured correctly.
+
+Realtime: Utilize Supabase Realtime for instant updates on order statuses and driver locations.
+
+Storage: Use Supabase Storage for images (restaurant logos, menu item images, driver avatars).
+
+Edge Functions: Potentially for complex backend logic like delivery route optimization or payment gateway webhooks (future consideration).
+
+Improvements & Production Readiness (To Work Today)
+To ensure the app can "start working today" with a smooth process, focus on these immediate improvements and considerations:
+
+Comprehensive Error Handling:
+
+Implement try-catch blocks for all Supabase API calls.
+
+Display user-friendly error messages in the UI (e.g., "Failed to load restaurants," "Login failed: Invalid credentials").
+
+Utilize React Error Boundaries for unexpected component errors.
+
+Crucially, replace all alert() calls with custom modal/toast components.
+
+Loading States & Skeletons:
+
+Show loading indicators (spinners, skeleton loaders) for data fetches (e.g., when loading restaurant details, search results, dashboard data).
+
+Input Validation:
+
+Implement client-side validation for all forms (registration, login, profile updates, checkout).
+
+Provide clear feedback to the user on invalid inputs.
+
+State Management:
+
+Ensure AuthContext and CartContext are correctly implemented and provide global state access where needed.
+
+Consider a more robust state management solution (e.g., Zustand, React Query for server state) as the app grows.
+
+Responsive Design:
+
+Thoroughly test on various screen sizes (mobile, tablet, desktop) and orientations.
+
+Ensure all tailwind responsive prefixes (sm:, md:, lg:) are correctly applied.
+
+Optimize image loading for mobile.
+
+User Feedback:
+
+Provide visual feedback for all user actions (e.g., button loading states, success/error toasts after form submissions).
+
+Map Integration (GPSTracking):
+
+For the GPSTracking component, use a robust map library (e.g., Leaflet.js with OpenStreetMap, or Google Maps if API keys are managed).
+
+Implement mock driver location updates initially, but design the component to easily integrate with real-time gps_tracking data from Supabase.
+
+Ensure the map correctly centers and zooms to show relevant locations (driver, restaurant, customer).
+
+Delivery Code Verification:
+
+Implement the logic for generating a unique, short delivery code (e.g., 4-6 digits) for each order.
+
+Store this code in the orders table.
+
+On the customer's OrderTrackingPage, display the code.
+
+On the driver's DriverDashboard (or a specific delivery view), provide an input field for the driver to enter the code.
+
+Implement a Supabase function or a secure backend endpoint to verify the code against the order and update the order status to "delivered" only upon successful verification.
+
+Real-time Notifications:
+
+Leverage Supabase Realtime subscriptions to the notifications table and orders table to push instant updates to relevant users (e.g., customer: "Your order is on the way!", restaurant: "New order received!", driver: "Order ready for pickup!").
+
+Payment Gateway Integration (Placeholder):
+
+For CheckoutPage, the payment method selection is a placeholder. Research and plan for integration with a Nigerian payment gateway (e.g., Paystack, Flutterwave) for card payments. Initially, "Cash on Delivery" can be fully functional.
+
+Database Seeding/Mock Data:
+
+Provide clear instructions or scripts for seeding initial mock data (restaurants, menu items, users) into Supabase for testing purposes.
+
+Deployment Considerations:
+
+Mention environment variables for SUPABASE_URL and SUPABASE_ANON_KEY for different environments (development, production).
+
+By focusing on these areas, you can build a solid foundation for Orda that is functional, user-friendly, and ready for real-world use.
