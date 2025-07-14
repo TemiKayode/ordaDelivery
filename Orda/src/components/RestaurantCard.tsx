@@ -1,146 +1,101 @@
 import React from 'react';
-import { Star, Clock, Truck, MapPin, Badge as BadgeIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Star, Clock, Truck, MapPin } from 'lucide-react';
+import { formatNaira } from '@/utils/currencyFormatter';
 
 interface Restaurant {
-  id: number;
-  name: string;
-  cuisine: string;
-  image: string;
-  rating: number;
-  deliveryTime: string;
-  deliveryFee: number;
-  isOpen: boolean;
-  specialties: string[];
-  distance: number;
-  promotion?: string;
+    id: string;
+    name: string;
+    description: string;
+    address: string;
+    cuisine_type: string;
+    image_url?: string;
+    rating: number;
+    review_count: number;
+    avg_delivery_time: number;
+    delivery_fee: number;
+    min_order_amount: number;
+    is_active: boolean;
 }
 
 interface RestaurantCardProps {
-  restaurant: Restaurant;
-  onClick?: () => void;
+    restaurant: Restaurant;
+    className?: string;
 }
 
-const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onClick }) => {
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      // Default navigation to restaurant detail page
-      window.location.href = `/restaurant/${restaurant.id}`;
-    }
-  };
+export default function RestaurantCard({ restaurant, className = '' }: RestaurantCardProps) {
+    const navigate = useNavigate();
 
-  return (
-    <Card 
-      className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden border-0 shadow-sm"
-      onClick={handleClick}
-    >
-      {/* Image Container */}
-      <div className="relative h-48 overflow-hidden">
-        <img
-          src={restaurant.image}
-          alt={restaurant.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-        
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3">
-          <Badge 
-            variant={restaurant.isOpen ? "default" : "secondary"}
-            className={`${
-              restaurant.isOpen 
-                ? "bg-green-500 hover:bg-green-600" 
-                : "bg-gray-500"
-            } text-white`}
-          >
-            {restaurant.isOpen ? "Open" : "Closed"}
-          </Badge>
-        </div>
+    const handleClick = () => {
+        navigate(`/restaurant/${restaurant.id}`);
+    };
 
-        {/* Promotion Badge */}
-        {restaurant.promotion && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-[#E94057] hover:bg-[#E94057]/90 text-white">
-              <BadgeIcon className="h-3 w-3 mr-1" />
-              {restaurant.promotion}
-            </Badge>
-          </div>
-        )}
-
-        {/* Distance Badge */}
-        <div className="absolute bottom-3 left-3">
-          <Badge variant="secondary" className="bg-white/90 text-gray-700">
-            <MapPin className="h-3 w-3 mr-1" />
-            {restaurant.distance} km
-          </Badge>
-        </div>
-      </div>
-
-      <CardContent className="p-4">
-        {/* Restaurant Info */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="font-semibold text-lg text-[#102542] group-hover:text-[#E94057] transition-colors">
-              {restaurant.name}
-            </h3>
-            <p className="text-gray-600 text-sm">{restaurant.cuisine}</p>
-          </div>
-
-          {/* Specialties */}
-          <div className="flex flex-wrap gap-1">
-            {restaurant.specialties.slice(0, 3).map((specialty, index) => (
-              <Badge 
-                key={index} 
-                variant="outline" 
-                className="text-xs text-gray-600 border-gray-200"
-              >
-                {specialty}
-              </Badge>
-            ))}
-            {restaurant.specialties.length > 3 && (
-              <Badge variant="outline" className="text-xs text-gray-600 border-gray-200">
-                +{restaurant.specialties.length - 3} more
-              </Badge>
-            )}
-          </div>
-
-          {/* Rating and Delivery Info */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">{restaurant.rating}</span>
+    return (
+        <Card 
+            className={`cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${className}`}
+            onClick={handleClick}
+        >
+            <div className="relative">
+                {restaurant.image_url ? (
+                    <img 
+                        src={restaurant.image_url} 
+                        alt={restaurant.name}
+                        className="w-full h-48 object-cover rounded-t-lg"
+                    />
+                ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-lg flex items-center justify-center">
+                        <span className="text-4xl font-bold text-primary/60">
+                            {restaurant.name.charAt(0)}
+                        </span>
+                    </div>
+                )}
+                
+                <div className="absolute top-2 right-2">
+                    <Badge variant="secondary">{restaurant.cuisine_type}</Badge>
+                </div>
+                
+                {!restaurant.is_active && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-t-lg flex items-center justify-center">
+                        <Badge variant="destructive">Currently Closed</Badge>
+                    </div>
+                )}
             </div>
             
-            <div className="flex items-center space-x-3 text-gray-600 text-sm">
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{restaurant.deliveryTime}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Truck className="h-4 w-4" />
-                <span>₦{restaurant.deliveryFee}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Button */}
-          <Button 
-            className="w-full bg-[#E94057] hover:bg-[#E94057]/90 text-white transition-colors"
-            disabled={!restaurant.isOpen}
-            onClick={(e) => {
-              e.stopPropagation();
-              window.location.href = `/restaurant/${restaurant.id}`;
-            }}
-          >
-            {restaurant.isOpen ? "Order Now" : "Closed"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default RestaurantCard;
+            <CardContent className="p-4">
+                <h3 className="font-bold text-lg mb-2 line-clamp-1">{restaurant.name}</h3>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{restaurant.description}</p>
+                
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="font-semibold text-sm">{restaurant.rating}</span>
+                        <span className="text-gray-500 text-sm">({restaurant.review_count})</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 text-gray-600 text-sm">
+                        <Clock className="w-4 h-4" />
+                        <span>{restaurant.avg_delivery_time} mins</span>
+                    </div>
+                </div>
+                
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1 text-gray-600 text-sm">
+                        <Truck className="w-4 h-4" />
+                        <span>{formatNaira(restaurant.delivery_fee)} delivery</span>
+                    </div>
+                    
+                    <div className="text-sm text-gray-500">
+                        Min: {formatNaira(restaurant.min_order_amount)}
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-1 text-gray-500 text-sm">
+                    <MapPin className="w-4 h-4" />
+                    <span className="truncate">{restaurant.address}</span>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
